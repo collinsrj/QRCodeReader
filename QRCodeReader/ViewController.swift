@@ -38,6 +38,9 @@ class ViewController: UIViewController {
         }
     }
     
+    /**
+     Setup the capture session and display the preview allowing users to locate the QR code.
+    */
     private func startReading() -> Bool {
         let captureDevice = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo)
         let input = getCaptureDeviceInput(captureDevice)
@@ -60,6 +63,9 @@ class ViewController: UIViewController {
         return true
     }
     
+    /**
+     Stop reading from the capture session.
+     */
     private func stopReading() {
         guard let _ = captureSession else {
             return
@@ -70,6 +76,12 @@ class ViewController: UIViewController {
         isReading = false
     }
     
+    /**
+     Get the input from the device.
+     
+     - parameter device: A capture device
+     - returns: An optional input from the capture device
+     */
     private func getCaptureDeviceInput(device: AVCaptureDevice) -> AVCaptureDeviceInput? {
         do {
             let input = try AVCaptureDeviceInput.init(device: device)
