@@ -8,6 +8,7 @@
 
 import UIKit
 import AVFoundation
+import Dispatch
 
 class ViewController: UIViewController {
 
@@ -16,7 +17,7 @@ class ViewController: UIViewController {
     private var isReading: Bool = false {
         didSet {
             let buttonText = isReading ? "Stop" : "Start"
-            startStopButton.setTitle(buttonText, forState: .Normal)
+            startStopButton.setTitle(buttonText, for: .normal)
         }
     }
     
@@ -33,7 +34,7 @@ class ViewController: UIViewController {
         if isReading {
             stopReading()
         } else {
-            startReading()
+            let _ = startReading()
             self.statusLabel.text = ""
         }
     }
@@ -42,23 +43,26 @@ class ViewController: UIViewController {
      Setup the capture session and display the preview allowing users to locate the QR code.
     */
     private func startReading() -> Bool {
-        let captureDevice = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo)
-        let input = getCaptureDeviceInput(captureDevice)
-        captureSession = AVCaptureSession()
-        captureSession!.addInput(input)
+        guard let captureDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeVideo) else {
+            return false
+        }
+        let input = getCaptureDeviceInput(device: captureDevice)
+        
+        let captureSession = AVCaptureSession()
+        captureSession.addInput(input)
         
         let captureMetadataOutput = AVCaptureMetadataOutput()
-        captureSession!.addOutput(captureMetadataOutput)
+        captureSession.addOutput(captureMetadataOutput)
 
-        let dispatchQueue = dispatch_queue_create("myQueue", nil)
+        let dispatchQueue = DispatchQueue(label:"myQueue", attributes: .concurrent)
         captureMetadataOutput.setMetadataObjectsDelegate(self, queue: dispatchQueue)
         captureMetadataOutput.metadataObjectTypes = [AVMetadataObjectTypeQRCode]
-        videoPreviewLayer = AVCaptureVideoPreviewLayer.init(session: captureSession!)
+        videoPreviewLayer = AVCaptureVideoPreviewLayer.init(session: captureSession)
         videoPreviewLayer!.videoGravity = AVLayerVideoGravityResizeAspectFill
         videoPreviewLayer?.frame = previewView.layer.bounds
         previewView.layer.addSublayer(videoPreviewLayer!)
         
-        captureSession?.startRunning()
+        captureSession.startRunning()
         isReading = true
         return true
     }
@@ -66,7 +70,7 @@ class ViewController: UIViewController {
     /**
      Stop reading from the capture session.
      */
-    private func stopReading() {
+    func stopReading() {
         guard let _ = captureSession else {
             return
         }
@@ -93,17 +97,14 @@ class ViewController: UIViewController {
 }
 
 extension ViewController: AVCaptureMetadataOutputObjectsDelegate {
-    func captureOutput(captureOutput: AVCaptureOutput!, didOutputMetadataObjects metadataObjects: [AnyObject]!, fromConnection connection: AVCaptureConnection!) {
-        guard metadataObjects.count > 0 else {
+    
+    func captureOutput(_ captureOutput: AVCaptureOutput!, didOutputMetadataObjects metadataObjects: [Any]!, from connection: AVCaptureConnection!) {
+        guard metadataObjects.count > 0, let metadataObject = metadataObjects[0] as? AVMetadataMachineReadableCodeObject, metadataObject.type == AVMetadataObjectTypeQRCode else {
             return
         }
-        guard let metadataObject = metadataObjects[0] as? AVMetadataMachineReadableCodeObject where metadataObject.type == AVMetadataObjectTypeQRCode else {
-            return
-        }
-        dispatch_async(dispatch_get_main_queue()) {
+        DispatchQueue.main.async {
             self.stopReading()
             self.statusLabel.text = metadataObject.stringValue
         }
-        debugPrint(metadataObject)
     }
 }
