@@ -1,5 +1,5 @@
 language: objective-c 
 osx_image: xcode8
-xcode_project: QRCodeReader.xcproject
+xcode_project: QRCodeReader.xcodeproj
 xcode_scheme: QRCodeReader
 xcode_sdk: iphonesimulator10.0
