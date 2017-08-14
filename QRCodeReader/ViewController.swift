@@ -43,22 +43,22 @@ class ViewController: UIViewController {
      Setup the capture session and display the preview allowing users to locate the QR code.
     */
     private func startReading() -> Bool {
-        guard let captureDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeVideo) else {
+        guard let captureDevice = AVCaptureDevice.default(for: AVMediaType.video) else {
             return false
         }
         let input = getCaptureDeviceInput(device: captureDevice)
         
         let captureSession = AVCaptureSession()
-        captureSession.addInput(input)
+        captureSession.addInput(input!)
         
         let captureMetadataOutput = AVCaptureMetadataOutput()
         captureSession.addOutput(captureMetadataOutput)
 
         let dispatchQueue = DispatchQueue(label:"myQueue", attributes: .concurrent)
         captureMetadataOutput.setMetadataObjectsDelegate(self, queue: dispatchQueue)
-        captureMetadataOutput.metadataObjectTypes = [AVMetadataObjectTypeQRCode]
+        captureMetadataOutput.metadataObjectTypes = [AVMetadataObject.ObjectType.qr]
         videoPreviewLayer = AVCaptureVideoPreviewLayer.init(session: captureSession)
-        videoPreviewLayer!.videoGravity = AVLayerVideoGravityResizeAspectFill
+        videoPreviewLayer!.videoGravity = AVLayerVideoGravity.resizeAspectFill
         videoPreviewLayer?.frame = previewView.layer.bounds
         previewView.layer.addSublayer(videoPreviewLayer!)
         
@@ -98,8 +98,8 @@ class ViewController: UIViewController {
 
 extension ViewController: AVCaptureMetadataOutputObjectsDelegate {
     
-    func captureOutput(_ captureOutput: AVCaptureOutput!, didOutputMetadataObjects metadataObjects: [Any]!, from connection: AVCaptureConnection!) {
-        guard metadataObjects.count > 0, let metadataObject = metadataObjects[0] as? AVMetadataMachineReadableCodeObject, metadataObject.type == AVMetadataObjectTypeQRCode else {
+    func metadataOutput(captureOutput: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+        guard metadataObjects.count > 0, let metadataObject = metadataObjects[0] as? AVMetadataMachineReadableCodeObject, metadataObject.type == AVMetadataObject.ObjectType.qr else {
             return
         }
         DispatchQueue.main.async {
